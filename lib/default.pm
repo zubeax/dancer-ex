@@ -75,7 +75,7 @@ sub local_decode_jwt
 	return parse_json($jwt);
 }
 
-'get' => '/echo' => sub {
+get '/echo' => sub {
 	my ($entry_id) = splat;
 
 	my $httprequest = request;
