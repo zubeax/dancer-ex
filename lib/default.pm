@@ -3,7 +3,6 @@ use Dancer2 ':syntax';
 use Template;
 use DBI;
 use DBD::mysql;
-use Data::Dumper;
 use MIME::Base64;
 use JSON;
 use JSON::Parse 'parse_json';
