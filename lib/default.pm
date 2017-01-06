@@ -3,6 +3,8 @@ use Dancer2 ':syntax';
 use Template;
 use DBI;
 use DBD::mysql;
+use MIME::Base64;
+use JSON::Parse 'parse_json';
 
 set template => 'template_toolkit';
 set layout => undef;
@@ -59,6 +61,66 @@ get '/health' => sub {
     return "ERROR: Database did not respond to ping.";
   }
   return "SUCCESS: Database connection appears healthy.";
+};
+
+
+sub local_decode_jwt
+{
+	( my $jwt64 ) = @_;
+
+	my @temp = split  /\./, $jwt64;
+
+	my $jwt = decode_base64( $temp[1] );
+	
+	return parse_json($jwt);
+}
+
+'get' => '/echo' => sub {
+	my ($entry_id) = splat;
+
+	my $httprequest = request;
+
+	my $routeparm            = $httprequest->route_parameters;
+	my $queryparm            = $httprequest->query_parameters;
+	my $bodyparm             = $httprequest->body_parameters;
+
+	my $request_method       = $httprequest->method;
+	my $client_address       = $httprequest->address;
+	my $client_base          = $httprequest->base->as_string;
+	my $client_dispatch_path = $httprequest->dispatch_path;
+	my $remote_address       = $httprequest->remote_address;
+
+	my $httprequest_headers = $httprequest->headers;
+
+	my $result = {};
+
+	$result->{method}               = $request_method       if defined $request_method;
+	$result->{client_address}       = $client_address       if defined $client_address;
+	$result->{client_base}          = $client_base          if defined $client_base;
+	$result->{client_dispatch_path} = $client_dispatch_path if defined $client_dispatch_path;
+	$result->{remote_address}       = $remote_address       if defined $remote_address;
+
+	map { $result->{routeparams}->{$_} = $routeparm->{$_};           } keys %$routeparm;
+
+	map { $result->{queryparams}->{$_} = $queryparm->{$_};           } keys %$queryparm;
+
+	map { $result->{bodyparams}->{$_}  = $bodyparm->{$_};            } keys %$bodyparm;
+
+	map { $result->{headers}->{$_}     = $httprequest_headers->{$_}; } keys %$httprequest_headers;
+
+	if ( defined $entry_id )
+	{
+		$result->{route} = [];
+		push @{ $result->{route} }, @$entry_id;
+	}
+
+	if ( exists $httprequest_headers->{'glue-id'} )
+	{
+		my $jwt = local_decode_jwt( $httprequest_headers->{'glue-id'} );
+		$result->{JWT} = $jwt;
+	}
+
+	return $result;
 };
 
 true;
