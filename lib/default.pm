@@ -80,9 +80,6 @@ get '/echo' => sub {
 	my ($entry_id) = splat;
 	my $httprequest = request;
 	
-	$Data::Dumper::Indent = 2;
-	my $dump = Data::Dumper->Dump([$httprequest]);
-
 	my $routeparm            = $httprequest->route_parameters;
 	my $queryparm            = $httprequest->query_parameters;
 	my $bodyparm             = $httprequest->body_parameters;
@@ -95,8 +92,8 @@ get '/echo' => sub {
 
 	my $httprequest_headers = $httprequest->headers;
 
-#	my $result = Dancer2::Core::Reply->new();
-    my $result = {};
+    my %resulthash = ();
+    my $result = \%resulthash; 
 
 	$result->{method}               = defined $request_method       ? $request_method       : "";          
 	$result->{client_address}       = defined $client_address       ? $client_address       : "";
@@ -125,14 +122,17 @@ get '/echo' => sub {
 	}
 
     if ( exists $httprequest_headers->{'accept'} 
-        && $httprequest_headers->{'accept'} =~ /application\/json/ )
+       && $httprequest_headers->{'accept'} =~ /application\/json/ )
     {
+        set content_type => 'application/json';
         content_type 'json';
-        set serializer => 'JSON';       
+        set serializer => 'JSON'; 
     }
     else
     {
-        $result = $dump;
+        set content_type => 'text/plain';
+        my $json = JSON->new->allow_nonref;
+        $result = $json->pretty->encode( \%resulthash );
     }
 
 	return $result;

@@ -3,8 +3,8 @@ requires "Dancer2::Plugin::Database" => "0";
 requires "DBD::mysql" => "4.031";
 requires "YAML::XS" => "0";
 requires "Template" => "0";
-requires "Data::Dumper" => "0";
 requires "MIME::Base64" => "0";
+requires "JSON" => "0";
 requires "JSON::Parse" => "0";
 
 recommends "URL::Encode::XS"  => "0";
