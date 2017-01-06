@@ -3,6 +3,7 @@ use Dancer2 ':syntax';
 use Template;
 use DBI;
 use DBD::mysql;
+use Data::Dumper;
 use MIME::Base64;
 use JSON::Parse 'parse_json';
 
@@ -77,8 +78,10 @@ sub local_decode_jwt
 
 get '/echo' => sub {
 	my ($entry_id) = splat;
-
 	my $httprequest = request;
+	
+	$Data::Dumper::Indent = 2;
+	my $dump = Data::Dumper->Dump([$httprequest]);
 
 	my $routeparm            = $httprequest->route_parameters;
 	my $queryparm            = $httprequest->query_parameters;
@@ -92,13 +95,14 @@ get '/echo' => sub {
 
 	my $httprequest_headers = $httprequest->headers;
 
-	my $result = {};
+#	my $result = Dancer2::Core::Reply->new();
+    my $result = {};
 
-	$result->{method}               = $request_method       if defined $request_method;
-	$result->{client_address}       = $client_address       if defined $client_address;
-	$result->{client_base}          = $client_base          if defined $client_base;
-	$result->{client_dispatch_path} = $client_dispatch_path if defined $client_dispatch_path;
-	$result->{remote_address}       = $remote_address       if defined $remote_address;
+	$result->{method}               = defined $request_method       ? $request_method       : "";          
+	$result->{client_address}       = defined $client_address       ? $client_address       : "";
+	$result->{client_base}          = defined $client_base          ? $client_base          : "";
+	$result->{client_dispatch_path} = defined $client_dispatch_path ? $client_dispatch_path : "";
+	$result->{remote_address}       = defined $remote_address       ? $remote_address       : "";
 
 	map { $result->{routeparams}->{$_} = $routeparm->{$_};           } keys %$routeparm;
 
@@ -119,6 +123,17 @@ get '/echo' => sub {
 		my $jwt = local_decode_jwt( $httprequest_headers->{'glue-id'} );
 		$result->{JWT} = $jwt;
 	}
+
+    if ( exists $httprequest_headers->{'accept'} 
+        && $httprequest_headers->{'accept'} =~ /application\/json/ )
+    {
+        content_type 'json';
+        set serializer => 'JSON';       
+    }
+    else
+    {
+        $result = $dump;
+    }
 
 	return $result;
 };
